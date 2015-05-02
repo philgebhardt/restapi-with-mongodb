@@ -1,0 +1,22 @@
+{
+  "name": "reader-api",
+  "main": "server.js",
+  "dependencies": {
+  "express" : "latest",
+  "stormpath" : "latest",
+  "express-stormpath" : "latest",
+  "mongodb" : "latest",
+  "mongoose" : "latest",
+  "body-parser" : "latest",
+  "method-override" : "latest",
+  "morgan" : "latest",
+  "winston" : "latest",
+  "express-winston" : "latest",
+  "validator" : "latest",
+  "path" : "latest",
+  "errorhandler" : "latest",
+  "frisby" : "latest",
+  "jasmine-node" : "latest",
+  "async" : "latest"
+    }
+}
