@@ -9,6 +9,7 @@ var apiKeyFilePath = 'config/stormpath_apikey.properties';
 var client;
 
 stormpath.loadApiKey(apiKeyFilePath, function apiKeyFileLoaded(err, apiKey) {
+  if (err) throw err;
   client = new stormpath.Client({apiKey: apiKey});
 });
 
@@ -52,9 +53,9 @@ function getApplication(callback) {
     client.getApplications({
         name: SP_APP_NAME
     }, function(err, applications) {
-        console.log(applications);
+        // console.log(applications);
         if (err) {
-            console.log("Error in getApplications");
+            console.log("Error in getApplications: " + err);
             throw err;
         }
         app = applications.items[0];
@@ -68,6 +69,7 @@ function deleteTestAccounts(callback) {
     }, function(err, accounts) {
         if (err) throw err;
         accounts.items.forEach(function deleteAccount(account) {
+            console.log('deleting user: ' + account['email']);
             account.delete(function deleteError(err) {
                 if (err) throw err;
             });

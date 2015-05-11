@@ -5,8 +5,8 @@ var emailUtils = require('./email_utils.js');
 var userSchema = new mongoose.Schema({
          active: Boolean,
          email: { type: String, trim: true, lowercase: true },
-         firstName: { type: String, trim: true },
-         lastName: { type: String, trim: true },
+         givenName: { type: String, trim: true },
+         surname: { type: String, trim: true },
          sp_api_key_id: { type: String, trim: true },
          sp_api_key_secret: { type: String, trim: true },
          subs: { type: [mongoose.Schema.Types.ObjectId], default: [] },
@@ -15,6 +15,10 @@ var userSchema = new mongoose.Schema({
      },
      { collection: 'user' }
 );
+
+userSchema.statics.findByEmail = function (email, callback) {
+  this.find({ email: new RegExp(email, 'i') }, callback);
+}
 
 userSchema.index({email : 1}, {unique:true});
 userSchema.index({sp_api_key_id : 1}, {unique:true});
@@ -96,12 +100,43 @@ exports.addAPIRouter = function(app, mongoose, stormpath) {
   var router = express.Router();
 
  	router.post('/user/enroll', function(req, res) {
- 		console.log('Router for /user/enroll');
-    if(req.body['firstName'] && emailUtils.isValid(req.body['email'])) {
-      res.json({});
-    } else {
+
+    account = req.body;
+    if(!account['givenName']) {
       res.status(400);
-      res.json({ error: 'invalid name or email' });
+      res.json({'error' : 'Undefined First Name'});
+    } else if(!emailUtils.isValid(account.email)) {
+      res.status(400);
+      res.json({'error' : 'Invalid Email'})
+    } else {
+        UserModel.findByEmail(account.email, function(err, accounts) {
+          if(err) {
+            console.log('error getting accounts: ' + err);
+          } else if(accounts.length) {
+            console.log("user already exists with email: " + accounts[0].email);
+            res.status(409);
+            res.json({error : 'Account with that email already exists.  Please choose another email.'});
+          } else {
+            var user = new UserModel(account);
+            app.locals.spApp.createAccount(account, function(err, account) {
+              if(err) throw err;
+              account.createApiKey(function(err,apiKey){
+                console.log('apiKey created: ' + apiKey.toString());
+                user.sp_api_key_id = apiKey.id;
+                user.sp_api_key_secret = apiKey.secret;
+                user.save(function(err) {
+                  if(err) {
+                    console.log('error saving new user to db: ' + err);
+                    throw err;
+                  }
+                  console.log("account created: " + account.email);
+                  res.status(201);
+                  res.json(account);
+                });
+              });
+            });
+          }
+      });
     }
  	});
 
